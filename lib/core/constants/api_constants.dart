@@ -1,4 +1,4 @@
 class ApiConstants {
   static const String baseUrl =
-      'https://word-api-204077634716.us-east1.run.app';
+      'https://soft-ai-api-568933999420.us-east1.run.app';
 }

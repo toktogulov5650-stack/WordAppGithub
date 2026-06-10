@@ -36,7 +36,8 @@ class LanguageNotifier extends Notifier<LanguageState> {
   }
 
   Future<void> setLanguage(String languageCode) async {
-    final normalized = normalizeLanguageCode(languageCode) ?? defaultLanguageCode;
+    final normalized =
+        normalizeLanguageCode(languageCode) ?? defaultLanguageCode;
     await _storage.saveLanguageCode(normalized);
     state = LanguageState(isLoading: false, languageCode: normalized);
   }

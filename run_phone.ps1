@@ -2,8 +2,8 @@ $javaHome = "C:\Program Files\Eclipse Adoptium\jdk-17.0.18.8-hotspot"
 $deviceId = "5200d85a425ac5a5"
 
 # If Google sign-in is configured, paste the IDs here once.
-$googleWebClientId = "204077634716-j5uqid266l0lj0eihmvtdpb13o71a61h.apps.googleusercontent.com"
-$googleServerClientId = "204077634716-j5uqid266l0lj0eihmvtdpb13o71a61h.apps.googleusercontent.com"
+$googleWebClientId = "204077634716-56jbenjk4g3r7cb726qmlchnrg2ms1gf.apps.googleusercontent.com"
+$googleServerClientId = "204077634716-56jbenjk4g3r7cb726qmlchnrg2ms1gf.apps.googleusercontent.com"
 
 $env:JAVA_HOME = $javaHome
 $env:Path = "$env:JAVA_HOME\bin;" + (($env:Path -split ';' | Where-Object {

@@ -6,12 +6,14 @@ class UserModel {
     required this.email,
     required this.name,
     required this.preferredLanguage,
+    this.avatarUrl,
   });
 
   final int id;
   final String email;
   final String name;
   final String preferredLanguage;
+  final String? avatarUrl;
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
@@ -21,15 +23,17 @@ class UserModel {
       preferredLanguage:
           normalizeLanguageCode(json['preferredLanguage'] as String?) ??
           defaultLanguageCode,
+      avatarUrl: _readAvatarUrl(json),
     );
   }
 
-  UserModel copyWith({String? preferredLanguage}) {
+  UserModel copyWith({String? preferredLanguage, String? avatarUrl}) {
     return UserModel(
       id: id,
       email: email,
       name: name,
       preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 
@@ -39,7 +43,18 @@ class UserModel {
       'email': email,
       'name': name,
       'preferredLanguage': preferredLanguage,
+      'avatarUrl': avatarUrl,
     };
+  }
+
+  static String? _readAvatarUrl(Map<String, dynamic> json) {
+    for (final key in ['avatarUrl', 'avatar_url', 'photoUrl', 'picture']) {
+      final value = json[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return null;
   }
 }
 

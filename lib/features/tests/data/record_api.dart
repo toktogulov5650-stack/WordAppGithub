@@ -14,9 +14,21 @@ class RecordApi {
 
   final Dio _dio;
 
-  Future<CategoryRecordModel> getCategoryRecord(int categoryId) async {
+  Future<CategoryRecordModel> getCategoryRecord(
+    int categoryId, {
+    required String token,
+  }) async {
     try {
-      final response = await _dio.get('/api/records/categories/$categoryId');
+      final response = await _dio.get(
+        '/api/records/categories/$categoryId',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        ),
+      );
       return CategoryRecordModel.fromJson(
         response.data as Map<String, dynamic>,
       );

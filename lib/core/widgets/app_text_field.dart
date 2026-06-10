@@ -60,7 +60,7 @@ class AppTextField extends StatelessWidget {
       cursorColor: AppColors.textDark,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
         color: AppColors.textDark,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         labelText: label,

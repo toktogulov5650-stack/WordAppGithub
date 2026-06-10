@@ -16,10 +16,10 @@ class SectionTitle extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontSize: 29,
+            fontSize: 28,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
-            height: 1.04,
+            letterSpacing: 0,
+            height: 1.1,
           ),
         ),
         if (subtitle != null) ...[

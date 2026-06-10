@@ -48,11 +48,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    await ref.read(authProvider.notifier).register(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    await ref
+        .read(authProvider.notifier)
+        .register(
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
   }
 
   Future<void> _googleLogin() async {
@@ -62,7 +64,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final strings = AppStrings.fromCode(ref.watch(languageProvider).languageCode);
+    final strings = AppStrings.fromCode(
+      ref.watch(languageProvider).languageCode,
+    );
 
     return AuthScreenFrame(
       title: strings.register,
@@ -199,7 +203,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   String? _validateName(String? value) {
     if ((value?.trim() ?? '').isEmpty) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).enterName;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).enterName;
     }
     return null;
   }
@@ -207,11 +213,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _validateEmail(String? value) {
     final email = value?.trim() ?? '';
     if (email.isEmpty) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).enterEmail;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).enterEmail;
     }
     const pattern = r'^[^@]+@[^@]+\.[^@]+$';
     if (!RegExp(pattern).hasMatch(email)) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).validEmail;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).validEmail;
     }
     return null;
   }
@@ -219,20 +229,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _validatePassword(String? value) {
     final password = value ?? '';
     if (password.isEmpty) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).enterPassword;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).enterPassword;
     }
     if (password.length < 6) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).minPassword;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).minPassword;
     }
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
     if ((value ?? '').isEmpty) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).repeatPasswordError;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).repeatPasswordError;
     }
     if (value != _passwordController.text) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).passwordsDoNotMatch;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).passwordsDoNotMatch;
     }
     return null;
   }

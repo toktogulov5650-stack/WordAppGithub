@@ -42,16 +42,16 @@ class WordByCategoryModel {
         (translations is String
             ? translations
             : translations is Iterable
-                ? translations.join(', ')
-                : null);
+            ? translations.join(', ')
+            : null);
 
     return WordByCategoryModel(
       wordId: (json['wordId'] as num?)?.toInt() ?? 0,
       englishWord: (json['englishWord'] as String?) ?? '',
       primaryTranslation:
           primaryTranslation == null || primaryTranslation.trim().isEmpty
-              ? null
-              : primaryTranslation,
+          ? null
+          : primaryTranslation,
     );
   }
 }
@@ -112,9 +112,9 @@ class WordExplanationModel {
       hint: _safeString(json['hint']),
       examples: rawExamples is List
           ? rawExamples
-              .whereType<Map<String, dynamic>>()
-              .map((e) => ExampleModel.fromJson(e))
-              .toList()
+                .whereType<Map<String, dynamic>>()
+                .map((e) => ExampleModel.fromJson(e))
+                .toList()
           : [],
     );
   }
@@ -130,10 +130,7 @@ class WordExplanationModel {
 ///  EXAMPLES WIDGET (UPDATED)
 /// ============================
 class ExamplesWidget extends StatelessWidget {
-  const ExamplesWidget({
-    super.key,
-    required this.examples,
-  });
+  const ExamplesWidget({super.key, required this.examples});
 
   final List<ExampleModel> examples;
 
@@ -149,19 +146,18 @@ class ExamplesWidget extends StatelessWidget {
             children: [
               Text(
                 example.text,
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
-                  height: 1.4,
-                  color: Colors.black,
+                  height: 1.48,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 example.translation,
-                style: TextStyle(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 15,
-                  height: 1.4,
+                  height: 1.48,
                   color: Colors.grey.shade700,
                 ),
               ),

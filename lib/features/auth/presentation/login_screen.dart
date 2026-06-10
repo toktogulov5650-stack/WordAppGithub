@@ -43,10 +43,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    await ref.read(authProvider.notifier).login(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
+    await ref
+        .read(authProvider.notifier)
+        .login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
   }
 
   Future<void> _googleLogin() async {
@@ -56,7 +58,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final strings = AppStrings.fromCode(ref.watch(languageProvider).languageCode);
+    final strings = AppStrings.fromCode(
+      ref.watch(languageProvider).languageCode,
+    );
 
     return AuthScreenFrame(
       title: strings.login,
@@ -146,12 +150,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = value?.trim() ?? '';
 
     if (email.isEmpty) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).enterEmail;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).enterEmail;
     }
 
     const pattern = r'^[^@]+@[^@]+\.[^@]+$';
     if (!RegExp(pattern).hasMatch(email)) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).validEmail;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).validEmail;
     }
 
     return null;
@@ -161,11 +169,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final password = value ?? '';
 
     if (password.isEmpty) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).enterPassword;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).enterPassword;
     }
 
     if (password.length < 6) {
-      return AppStrings.fromCode(ref.read(languageProvider).languageCode).minPassword;
+      return AppStrings.fromCode(
+        ref.read(languageProvider).languageCode,
+      ).minPassword;
     }
 
     return null;

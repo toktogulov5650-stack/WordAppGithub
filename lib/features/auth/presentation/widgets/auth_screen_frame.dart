@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/responsive.dart';
+import '../../../../core/widgets/app_logo.dart';
 
 class AuthScreenFrame extends StatelessWidget {
   const AuthScreenFrame({
@@ -18,12 +20,23 @@ class AuthScreenFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = Responsive.horizontalPadding(
+      context,
+      compact: 18,
+      regular: 20,
+      wide: 24,
+    );
+    final logoSize = Responsive.value(context, 72, minScale: 0.88, maxScale: 1);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: Responsive.verticalGap(context, 22),
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
@@ -31,34 +44,22 @@ class AuthScreenFrame extends StatelessWidget {
                 children: [
                   if (topAction != null) ...[
                     Align(alignment: Alignment.centerLeft, child: topAction!),
-                    const SizedBox(height: 24),
+                    SizedBox(height: Responsive.verticalGap(context, 18)),
                   ],
+                  Center(child: AppLogo(size: logoSize)),
+                  SizedBox(height: Responsive.verticalGap(context, 20)),
                   Text(
                     title,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontSize: Responsive.font(context, 28),
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textDark,
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: AppColors.shadowSoft,
-                          blurRadius: 20,
-                          offset: Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: form,
-                  ),
-                  const SizedBox(height: 18),
+                  SizedBox(height: Responsive.verticalGap(context, 22)),
+                  form,
+                  SizedBox(height: Responsive.verticalGap(context, 16)),
                   footer,
                 ],
               ),
@@ -97,7 +98,7 @@ class AuthErrorBanner extends StatelessWidget {
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: const Color(0xFF991B1B),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -123,7 +124,7 @@ class AuthDivider extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textTertiary,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),

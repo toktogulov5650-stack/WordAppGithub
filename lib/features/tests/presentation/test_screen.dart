@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/language/app_strings.dart';
 import '../../../core/language/language_provider.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_card.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/loading_view.dart';
 import '../providers/test_provider.dart';
@@ -48,13 +47,14 @@ class _TestScreenState extends ConsumerState<TestScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen<TestState>(testProvider, (previous, next) {
-      if (next.errorMessage != null &&
-          next.errorMessage != previous?.errorMessage &&
+      final errorMessage = next.errorMessage;
+      if (errorMessage != null &&
+          errorMessage != previous?.errorMessage &&
           mounted &&
           next.currentQuestion != null) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
       }
     });
 
@@ -63,7 +63,6 @@ class _TestScreenState extends ConsumerState<TestScreen> {
     final strings = AppStrings.fromCode(
       ref.watch(languageProvider).languageCode,
     );
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -81,7 +80,22 @@ class _TestScreenState extends ConsumerState<TestScreen> {
         ),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            padding: EdgeInsets.fromLTRB(
+              Responsive.horizontalPadding(
+                context,
+                compact: 18,
+                regular: 20,
+                wide: 24,
+              ),
+              8,
+              Responsive.horizontalPadding(
+                context,
+                compact: 18,
+                regular: 20,
+                wide: 24,
+              ),
+              20,
+            ),
             child: Builder(
               builder: (context) {
                 if (state.isLoading) {
@@ -101,56 +115,12 @@ class _TestScreenState extends ConsumerState<TestScreen> {
                 return Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 760),
-                    child: ListView(
-                      children: [
-                        _ProgressHeader(state: state, strings: strings),
-                        if (state.lastAnswerCorrect != null) ...[
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: _AnswerFeedbackChip(
-                              isCorrect: state.lastAnswerCorrect!,
-                              strings: strings,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        AppCard(
-                          radius: 28,
-                          padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.background,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: Text(
-                                  strings.englishWord,
-                                  style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(color: AppColors.textMuted),
-                                ),
-                              ),
-                              const SizedBox(height: 18),
-                              Text(
-                                question.englishWord,
-                                style: Theme.of(context).textTheme.displaySmall
-                                    ?.copyWith(fontSize: 42),
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        _AnswerGrid(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final answerGrid = _AnswerGrid(
                           answers: question.answerOptions,
                           selectedAnswer: state.selectedAnswer,
+                          correctAnswer: state.correctAnswer,
                           isLocked: state.isLocked,
                           lastAnswerCorrect: state.lastAnswerCorrect,
                           onTap: (answer) async {
@@ -161,14 +131,11 @@ class _TestScreenState extends ConsumerState<TestScreen> {
                               context.go('/result/$sessionId');
                             }
                           },
-                        ),
-                        const SizedBox(height: 18),
-                        AppButton(
+                        );
+                        final unknownButton = _UnknownButton(
                           label: state.isMarkedUnknown
                               ? strings.markedUnknown
                               : strings.dontKnow,
-                          height: 52,
-                          variant: AppButtonVariant.warning,
                           onPressed: state.isLocked
                               ? null
                               : () async {
@@ -179,8 +146,38 @@ class _TestScreenState extends ConsumerState<TestScreen> {
                                     context.go('/result/$sessionId');
                                   }
                                 },
-                        ),
-                      ],
+                        );
+                        final lastAnswerCorrect = state.lastAnswerCorrect;
+                        final topContent = <Widget>[
+                          _ProgressHeader(state: state, strings: strings),
+                          if (lastAnswerCorrect != null) ...[
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: _AnswerFeedbackChip(
+                                isCorrect: lastAnswerCorrect,
+                                strings: strings,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          _QuestionPanel(
+                            label: strings.englishWord,
+                            word: question.englishWord,
+                          ),
+                        ];
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ...topContent,
+                            const Spacer(),
+                            answerGrid,
+                            const SizedBox(height: 12),
+                            unknownButton,
+                          ],
+                        );
+                      },
                     ),
                   ),
                 );
@@ -213,17 +210,21 @@ class _ProgressHeader extends StatelessWidget {
             Expanded(
               child: Text(
                 strings.questionNumber(state.answeredQuestionCount + 1),
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
               ),
             ),
             _ScorePill(score: state.correctAnswerCount, strings: strings),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 11),
         ClipRRect(
           borderRadius: BorderRadius.circular(999),
           child: LinearProgressIndicator(
-            minHeight: 9,
+            minHeight: 6,
             value: progress,
             backgroundColor: AppColors.cardSecondary,
             color: AppColors.success,
@@ -234,10 +235,68 @@ class _ProgressHeader extends StatelessWidget {
   }
 }
 
+class _QuestionPanel extends StatelessWidget {
+  const _QuestionPanel({required this.label, required this.word});
+
+  final String label;
+  final String word;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      child: Container(
+        constraints: BoxConstraints(
+          minHeight: Responsive.verticalGap(
+            context,
+            202,
+            minScale: 0.84,
+            maxScale: 1.06,
+          ),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          Responsive.isCompact(context) ? 18 : 22,
+          Responsive.isCompact(context) ? 24 : 28,
+          Responsive.isCompact(context) ? 18 : 22,
+          Responsive.isCompact(context) ? 26 : 30,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFBFCFB),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFEFF2EF)),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadowSoft,
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            word,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontSize: Responsive.font(context, 44, minScale: 0.82),
+              height: 1.1,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textDark,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AnswerGrid extends StatelessWidget {
   const _AnswerGrid({
     required this.answers,
     required this.selectedAnswer,
+    required this.correctAnswer,
     required this.isLocked,
     required this.lastAnswerCorrect,
     required this.onTap,
@@ -245,33 +304,80 @@ class _AnswerGrid extends StatelessWidget {
 
   final List<String> answers;
   final String? selectedAnswer;
+  final String? correctAnswer;
   final bool isLocked;
   final bool? lastAnswerCorrect;
   final ValueChanged<String> onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      itemCount: answers.length,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        mainAxisExtent: 100,
-      ),
-      itemBuilder: (context, index) {
-        final answer = answers[index];
-        return _AnswerOptionCard(
-          answer: answer,
-          isSelected: selectedAnswer == answer,
-          isLocked: isLocked,
-          lastAnswerCorrect: lastAnswerCorrect,
-          onTap: () => onTap(answer),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 370;
+        return GridView.builder(
+          itemCount: answers.length,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: isCompact ? 10 : 12,
+            mainAxisSpacing: isCompact ? 10 : 12,
+            mainAxisExtent: isCompact ? 98 : 112,
+          ),
+          itemBuilder: (context, index) {
+            final answer = answers[index];
+            return _AnswerOptionCard(
+              answer: answer,
+              isSelected: selectedAnswer == answer,
+              isCorrectAnswer: _sameAnswer(answer, correctAnswer),
+              isLocked: isLocked,
+              lastAnswerCorrect: lastAnswerCorrect,
+              onTap: () => onTap(answer),
+            );
+          },
         );
       },
     );
+  }
+
+  bool _sameAnswer(String answer, String? correctAnswer) {
+    if (correctAnswer == null || correctAnswer.trim().isEmpty) {
+      return false;
+    }
+
+    final answerParts = _answerParts(answer);
+    final correctParts = _answerParts(correctAnswer);
+
+    return answerParts.any(correctParts.contains);
+  }
+
+  Set<String> _answerParts(String text) {
+    final parts = <String>{};
+    for (final rawPart in text.split(RegExp(r'[;,/\n|]+'))) {
+      final normalized = _normalizeAnswer(rawPart);
+      if (normalized.isNotEmpty) {
+        parts.add(normalized);
+      }
+
+      final withoutClarification = rawPart.replaceAll(
+        RegExp(r'\([^)]*\)|\[[^\]]*\]'),
+        ' ',
+      );
+      final simplified = _normalizeAnswer(withoutClarification);
+      if (simplified.isNotEmpty) {
+        parts.add(simplified);
+      }
+    }
+
+    return parts;
+  }
+
+  String _normalizeAnswer(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[.!?:"“”‘’«»]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 }
 
@@ -279,6 +385,7 @@ class _AnswerOptionCard extends StatelessWidget {
   const _AnswerOptionCard({
     required this.answer,
     required this.isSelected,
+    required this.isCorrectAnswer,
     required this.isLocked,
     required this.lastAnswerCorrect,
     required this.onTap,
@@ -286,6 +393,7 @@ class _AnswerOptionCard extends StatelessWidget {
 
   final String answer;
   final bool isSelected;
+  final bool isCorrectAnswer;
   final bool isLocked;
   final bool? lastAnswerCorrect;
   final VoidCallback onTap;
@@ -294,38 +402,46 @@ class _AnswerOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _resolveAnswerColor(
       isSelected: isSelected,
+      isCorrectAnswer: isCorrectAnswer,
       isCorrect: lastAnswerCorrect,
     );
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: isLocked ? null : onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: colors.background,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colors.border,
-              width: isSelected ? 2 : 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colors.shadow,
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        color: colors.background,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.border, width: isSelected ? 1.6 : 1),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow,
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-          child: Center(
-            child: Text(
-              answer,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: colors.text),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: isLocked ? null : onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Center(
+              child: Text(
+                answer,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: colors.text,
+                  fontSize: Responsive.font(context, 16, minScale: 0.90),
+                  height: 1.25,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0,
+                ),
+              ),
             ),
           ),
         ),
@@ -335,40 +451,113 @@ class _AnswerOptionCard extends StatelessWidget {
 
   _AnswerColors _resolveAnswerColor({
     required bool isSelected,
+    required bool isCorrectAnswer,
     required bool? isCorrect,
   }) {
+    if (isCorrectAnswer && isCorrect == false) {
+      return const _AnswerColors(
+        background: Color(0xFFF1FFF6),
+        border: Color(0xFF86EFAC),
+        text: AppColors.successDark,
+        shadow: Color(0x0D22C55E),
+      );
+    }
+
     if (!isSelected) {
       return _AnswerColors(
         background: Colors.white,
-        border: AppColors.border,
+        border: const Color(0xFFF1F1F3),
         text: AppColors.textDark,
-        shadow: AppColors.textDark.withValues(alpha: 0.04),
+        shadow: AppColors.textDark.withValues(alpha: 0.025),
       );
     }
 
     if (isCorrect == true) {
       return const _AnswerColors(
-        background: AppColors.successSurface,
-        border: AppColors.success,
+        background: Color(0xFFF1FFF6),
+        border: Color(0xFF86EFAC),
         text: AppColors.successDark,
-        shadow: Color(0x1622C55E),
+        shadow: Color(0x0D22C55E),
       );
     }
 
     if (isCorrect == false) {
       return const _AnswerColors(
-        background: AppColors.errorSurface,
-        border: AppColors.error,
+        background: Color(0xFFFFF1F2),
+        border: Color(0xFFFCA5A5),
         text: AppColors.errorDark,
-        shadow: Color(0x14EF4444),
+        shadow: Color(0x0DEF4444),
       );
     }
 
     return _AnswerColors(
-      background: AppColors.background,
+      background: const Color(0xFFFAFAFB),
       border: AppColors.textDark,
       text: AppColors.textDark,
-      shadow: AppColors.textDark.withValues(alpha: 0.06),
+      shadow: AppColors.textDark.withValues(alpha: 0.035),
+    );
+  }
+}
+
+class _UnknownButton extends StatelessWidget {
+  const _UnknownButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = onPressed == null;
+
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 180),
+      opacity: isDisabled ? 0.55 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onPressed,
+          child: Ink(
+            height: 50,
+            decoration: BoxDecoration(
+              color: AppColors.warningSurface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFFDE68A)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x08F59E0B),
+                  blurRadius: 14,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.help_outline_rounded,
+                  color: AppColors.warningDark,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppColors.warningDark,
+                      fontSize: Responsive.font(context, 14),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -388,11 +577,11 @@ class _AnswerFeedbackChip extends StatelessWidget {
     final textColor = isCorrect ? AppColors.successDark : AppColors.errorDark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: border.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -424,17 +613,19 @@ class _ScorePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.border),
+        color: AppColors.cardSecondary,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Text(
         strings.score(score),
-        style: Theme.of(
-          context,
-        ).textTheme.labelMedium?.copyWith(color: AppColors.textDark),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: AppColors.textMuted,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0,
+        ),
       ),
     );
   }

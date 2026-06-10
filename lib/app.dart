@@ -12,7 +12,9 @@ class WordApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final strings = AppStrings.fromCode(ref.watch(languageProvider).languageCode);
+    final strings = AppStrings.fromCode(
+      ref.watch(languageProvider).languageCode,
+    );
 
     return MaterialApp.router(
       title: strings.appName,

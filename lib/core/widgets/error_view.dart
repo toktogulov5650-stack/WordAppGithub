@@ -22,7 +22,9 @@ class ErrorView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final strings = AppStrings.fromCode(ref.watch(languageProvider).languageCode);
+    final strings = AppStrings.fromCode(
+      ref.watch(languageProvider).languageCode,
+    );
 
     return Center(
       child: Padding(

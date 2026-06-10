@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/language/language_provider.dart';
 import '../../../core/network/api_exception.dart';
+import '../../explanations/data/word_explanation_api.dart';
 import '../data/test_api.dart';
 import '../data/test_models.dart';
+import 'records_provider.dart';
 
 class TestState {
   const TestState({
@@ -16,6 +18,7 @@ class TestState {
     this.answeredQuestionCount = 0,
     this.isMarkedUnknown = false,
     this.selectedAnswer,
+    this.correctAnswer,
     this.lastAnswerCorrect,
     this.errorMessage,
   });
@@ -29,6 +32,7 @@ class TestState {
   final int answeredQuestionCount;
   final bool isMarkedUnknown;
   final String? selectedAnswer;
+  final String? correctAnswer;
   final bool? lastAnswerCorrect;
   final String? errorMessage;
 
@@ -46,6 +50,8 @@ class TestState {
     bool? isMarkedUnknown,
     String? selectedAnswer,
     bool clearSelectedAnswer = false,
+    String? correctAnswer,
+    bool clearCorrectAnswer = false,
     bool? lastAnswerCorrect,
     bool clearLastAnswerCorrect = false,
     String? errorMessage,
@@ -70,6 +76,9 @@ class TestState {
       selectedAnswer: clearSelectedAnswer
           ? null
           : (selectedAnswer ?? this.selectedAnswer),
+      correctAnswer: clearCorrectAnswer
+          ? null
+          : (correctAnswer ?? this.correctAnswer),
       lastAnswerCorrect: clearLastAnswerCorrect
           ? null
           : (lastAnswerCorrect ?? this.lastAnswerCorrect),
@@ -88,7 +97,11 @@ final finishTestProvider = FutureProvider.family<FinishTestResponse, int>((
   ref,
   testSessionId,
 ) async {
-  return ref.read(testProvider.notifier).finishTest(testSessionId);
+  final result = await ref
+      .read(testProvider.notifier)
+      .finishTest(testSessionId);
+  ref.invalidate(recordsProvider);
+  return result;
 });
 
 class TestNotifier extends Notifier<TestState> {
@@ -147,6 +160,7 @@ class TestNotifier extends Notifier<TestState> {
       isLocked: true,
       selectedAnswer: selectedAnswer,
       clearError: true,
+      clearCorrectAnswer: true,
       clearLastAnswerCorrect: true,
     );
 
@@ -161,14 +175,16 @@ class TestNotifier extends Notifier<TestState> {
               isMarkedUnknown: state.isMarkedUnknown,
             ),
           );
+      final correctAnswer = await _resolveCorrectAnswer(response, question);
 
       state = state.copyWith(
         correctAnswerCount: response.correctAnswerCount,
         answeredQuestionCount: state.answeredQuestionCount + 1,
+        correctAnswer: correctAnswer,
         lastAnswerCorrect: response.isCorrect,
       );
 
-      await Future<void>.delayed(const Duration(milliseconds: 650));
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
 
       if (response.isFinished) {
         state = state.copyWith(isLocked: false);
@@ -180,6 +196,7 @@ class TestNotifier extends Notifier<TestState> {
         isLocked: false,
         isMarkedUnknown: false,
         clearSelectedAnswer: true,
+        clearCorrectAnswer: true,
         clearLastAnswerCorrect: true,
       );
       return null;
@@ -195,5 +212,94 @@ class TestNotifier extends Notifier<TestState> {
 
   void clear() {
     state = TestState.initial();
+  }
+
+  Future<String?> _resolveCorrectAnswer(
+    SubmitAnswerResponse response,
+    TestQuestionModel question,
+  ) async {
+    final directAnswer = _matchAnswerOption(
+      response.correctAnswer,
+      question.answerOptions,
+    );
+    if (directAnswer != null) {
+      return directAnswer;
+    }
+
+    if (response.correctAnswer != null &&
+        response.correctAnswer!.trim().isNotEmpty) {
+      return response.correctAnswer;
+    }
+
+    if (response.isCorrect) {
+      return null;
+    }
+
+    try {
+      final explanation = await ref
+          .read(wordExplanationApiProvider)
+          .getWordExplanation(
+            question.wordId,
+            languageCode: ref.read(languageProvider).languageCode,
+          );
+
+      return _matchAnswerOption(
+            explanation.translations,
+            question.answerOptions,
+          ) ??
+          explanation.translations;
+    } on ApiException {
+      return null;
+    }
+  }
+
+  String? _matchAnswerOption(String? source, List<String> options) {
+    if (source == null || source.trim().isEmpty) {
+      return null;
+    }
+
+    for (final option in options) {
+      if (_answersMatch(option, source)) {
+        return option;
+      }
+    }
+
+    return null;
+  }
+
+  bool _answersMatch(String left, String right) {
+    final leftParts = _answerParts(left);
+    final rightParts = _answerParts(right);
+
+    return leftParts.any(rightParts.contains);
+  }
+
+  Set<String> _answerParts(String text) {
+    final parts = <String>{};
+    for (final rawPart in text.split(RegExp(r'[;,/\n|]+'))) {
+      final normalized = _normalizeAnswer(rawPart);
+      if (normalized.isNotEmpty) {
+        parts.add(normalized);
+      }
+
+      final withoutClarification = rawPart.replaceAll(
+        RegExp(r'\([^)]*\)|\[[^\]]*\]'),
+        ' ',
+      );
+      final simplified = _normalizeAnswer(withoutClarification);
+      if (simplified.isNotEmpty) {
+        parts.add(simplified);
+      }
+    }
+
+    return parts;
+  }
+
+  String _normalizeAnswer(String text) {
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[.!?:"“”‘’«»]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 }

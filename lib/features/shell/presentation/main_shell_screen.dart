@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/language/app_strings.dart';
 import '../../../core/language/language_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/responsive.dart';
 import '../../explanations/presentation/explanations_home_screen.dart';
 import '../../flashcards/presentation/flashcards_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
@@ -30,14 +31,22 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AppStrings.fromCode(ref.watch(languageProvider).languageCode);
+    final strings = AppStrings.fromCode(
+      ref.watch(languageProvider).languageCode,
+    );
+    final isCompact = Responsive.isCompact(context);
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+          padding: EdgeInsets.fromLTRB(
+            isCompact ? 10 : 16,
+            8,
+            isCompact ? 10 : 16,
+            14,
+          ),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -54,6 +63,7 @@ class _MainShellScreenState extends ConsumerState<MainShellScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: NavigationBar(
+                height: isCompact ? 60 : 64,
                 selectedIndex: _currentIndex,
                 onDestinationSelected: (index) {
                   setState(() => _currentIndex = index);

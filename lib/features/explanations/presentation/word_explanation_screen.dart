@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/language/app_strings.dart';
 import '../../../core/language/language_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/empty_view.dart';
 import '../../../core/widgets/error_view.dart';
 import '../../../core/widgets/loading_view.dart';
@@ -46,15 +47,16 @@ class WordExplanationScreen extends ConsumerWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 30),
+                  padding: EdgeInsets.fromLTRB(
+                    Responsive.horizontalPadding(context),
+                    8,
+                    Responsive.horizontalPadding(context),
+                    40,
+                  ),
                   children: [
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(6, 12, 6, 8),
-                      child: _UnifiedExplanationBody(
-                        explanation: explanation,
-                        strings: strings,
-                      ),
+                    _UnifiedExplanationBody(
+                      explanation: explanation,
+                      strings: strings,
                     ),
                   ],
                 ),
@@ -84,16 +86,19 @@ class _UnifiedExplanationBody extends StatelessWidget {
                 title: strings.whatIs,
                 content: explanation.whatIs,
                 icon: Icons.help_outline_rounded,
+                accentColor: AppColors.actionBlue,
               ),
               _ExplanationContentSection(
                 title: strings.meaning,
                 content: explanation.meaning,
                 icon: Icons.lightbulb_outline_rounded,
+                accentColor: AppColors.warning,
               ),
               _ExplanationContentSection(
                 title: strings.usage,
                 content: explanation.usage,
                 icon: Icons.auto_stories_outlined,
+                accentColor: AppColors.success,
               ),
             ]
             .where(
@@ -110,66 +115,25 @@ class _UnifiedExplanationBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: AppColors.verySoftGreen,
-            borderRadius: BorderRadius.circular(23),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const Icon(
-            Icons.auto_stories_rounded,
-            color: AppColors.textDark,
-            size: 32,
-          ),
-        ),
+        _WordHero(explanation: explanation, strings: strings),
 
-        const SizedBox(height: 20),
-
-        Text(
-          explanation.englishWord,
-          style: Theme.of(
-            context,
-          ).textTheme.displaySmall?.copyWith(fontSize: 38),
-        ),
-
-        if ((explanation.translations ?? '').isNotEmpty) ...[
-          const SizedBox(height: 10),
-
-          Text(
-            explanation.translations!,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontSize: 20,
-              color: AppColors.textMuted,
-            ),
-          ),
+        if (sections.isNotEmpty || hasExamples || hasHint) ...[
+          const SizedBox(height: 28),
+          const Divider(height: 1, color: AppColors.divider),
+          const SizedBox(height: 24),
         ],
-
-        if (sections.isNotEmpty || hasExamples || hasHint)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Divider(height: 1, color: AppColors.divider),
-          ),
 
         for (var i = 0; i < sections.length; i++) ...[
           _ExplanationSectionView(section: sections[i]),
 
           if (i != sections.length - 1 || hasExamples || hasHint)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Divider(height: 1, color: AppColors.divider),
-            ),
+            const _SectionBreak(),
         ],
 
         if (hasExamples) ...[
           _ExamplesSection(examples: explanation.examples, strings: strings),
 
-          if (hasHint)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Divider(height: 1, color: AppColors.divider),
-            ),
+          if (hasHint) const _SectionBreak(),
         ],
 
         if (hasHint)
@@ -178,9 +142,55 @@ class _UnifiedExplanationBody extends StatelessWidget {
               title: strings.hint,
               content: explanation.hint,
               icon: Icons.tips_and_updates_outlined,
+              accentColor: AppColors.secondaryPurple,
             ),
           ),
       ],
+    );
+  }
+}
+
+class _WordHero extends StatelessWidget {
+  const _WordHero({required this.explanation, required this.strings});
+
+  final WordExplanationModel explanation;
+  final AppStrings strings;
+
+  @override
+  Widget build(BuildContext context) {
+    final translation = explanation.translations?.trim();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            explanation.englishWord,
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+              fontSize: Responsive.font(context, 40, minScale: 0.84),
+              height: 1.08,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0,
+            ),
+          ),
+
+          if (translation != null && translation.isNotEmpty) ...[
+            const SizedBox(height: 12),
+
+            Text(
+              translation,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontSize: Responsive.font(context, 21),
+                height: 1.34,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0,
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -190,11 +200,13 @@ class _ExplanationContentSection {
     required this.title,
     required this.content,
     required this.icon,
+    required this.accentColor,
   });
 
   final String title;
   final String? content;
   final IconData icon;
+  final Color accentColor;
 }
 
 class _ExplanationSectionView extends StatelessWidget {
@@ -208,25 +220,29 @@ class _ExplanationSectionView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 30,
+              height: 30,
               decoration: BoxDecoration(
-                color: AppColors.verySoftGreen,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
+                color: section.accentColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(section.icon, color: AppColors.textDark, size: 20),
+              child: Icon(section.icon, color: section.accentColor, size: 18),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 11),
 
-            Text(
-              section.title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontSize: 18),
+            Expanded(
+              child: Text(
+                section.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: Responsive.font(context, 19),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
             ),
           ],
         ),
@@ -235,9 +251,27 @@ class _ExplanationSectionView extends StatelessWidget {
 
         Text(
           section.content!.trim(),
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.56),
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontSize: Responsive.font(context, 17, minScale: 0.94),
+            height: 1.62,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0,
+            color: AppColors.textDark,
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _SectionBreak extends StatelessWidget {
+  const _SectionBreak();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 22),
+      child: Divider(height: 1, color: AppColors.divider),
     );
   }
 }
@@ -254,72 +288,100 @@ class _ExamplesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.verySoftGreen,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Icon(
-                Icons.format_quote_rounded,
-                color: AppColors.textDark,
-                size: 20,
-              ),
+            const Icon(
+              Icons.format_quote_rounded,
+              color: AppColors.secondaryPurple,
+              size: 21,
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
 
-            Text(
-              strings.examples,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontSize: 18),
+            Expanded(
+              child: Text(
+                strings.examples,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: Responsive.font(context, 19),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0,
+                ),
+              ),
             ),
           ],
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 17),
 
         for (var i = 0; i < examples.length; i++) ...[
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 14),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
-            decoration: BoxDecoration(
-              color: AppColors.cardSecondary,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  examples[i].text,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
-                    color: AppColors.textDark,
-                  ),
-                ),
+          _ExampleItem(example: examples[i], number: i + 1),
+          if (i != examples.length - 1) const SizedBox(height: 18),
+        ],
+      ],
+    );
+  }
+}
 
-                const SizedBox(height: 10),
+class _ExampleItem extends StatelessWidget {
+  const _ExampleItem({required this.example, required this.number});
 
-                Text(
-                  examples[i].translation,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 15,
-                    height: 1.5,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ],
+  final ExampleModel example;
+  final int number;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: AppColors.actionBlue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Text(
+              '$number',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.actionBlue,
+                letterSpacing: 0,
+              ),
             ),
           ),
-        ],
+        ),
+
+        const SizedBox(width: 14),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                example.text,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontSize: Responsive.font(context, 17, minScale: 0.94),
+                  fontWeight: FontWeight.w600,
+                  height: 1.48,
+                  letterSpacing: 0,
+                  color: AppColors.textDark,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                example.translation,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: Responsive.font(context, 15),
+                  height: 1.48,
+                  letterSpacing: 0,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }

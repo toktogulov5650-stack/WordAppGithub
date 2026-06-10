@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -7,6 +8,9 @@ import '../../../core/language/language_provider.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/session/session_controller.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../tests/providers/categories_provider.dart';
+import '../../tests/providers/records_provider.dart';
+import '../../tests/providers/test_provider.dart';
 import '../data/auth_api.dart';
 import '../data/auth_models.dart';
 
@@ -61,8 +65,11 @@ final profileUserProvider = FutureProvider<UserModel>((ref) async {
 });
 
 class AuthNotifier extends Notifier<AuthState> {
+  static const _defaultGoogleClientId =
+      '204077634716-56jbenjk4g3r7cb726qmlchnrg2ms1gf.apps.googleusercontent.com';
   static const _googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: _defaultGoogleClientId,
   );
   static const _googleServerClientId = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',
@@ -86,10 +93,8 @@ class AuthNotifier extends Notifier<AuthState> {
   AuthState build() {
     ref.listen<SessionController>(sessionControllerProvider, (previous, next) {
       if (next.isUnauthorized) {
-        state = AuthState(
-          status: AuthStatus.unauthenticated,
-          errorMessage: _strings.sessionExpired,
-        );
+        _clearUserDataCache();
+        state = const AuthState(status: AuthStatus.unauthenticated);
       }
     });
     return AuthState.initial();
@@ -101,27 +106,19 @@ class AuthNotifier extends Notifier<AuthState> {
     }
 
     state = state.copyWith(isLoading: true, clearError: true);
-    final token = await _tokenStorage.readToken();
-
-    if (token == null || token.isEmpty) {
-      _sessionController.reset();
-      state = const AuthState(status: AuthStatus.unauthenticated);
-      return;
-    }
-
-    try {
-      final user = await _authApi.getCurrentUser();
-      await _languageNotifier.setLanguage(user.preferredLanguage);
-      _sessionController.reset();
-      state = AuthState(status: AuthStatus.authenticated, user: user);
-    } on ApiException {
-      await _tokenStorage.clearToken();
-      state = const AuthState(status: AuthStatus.unauthenticated);
-    }
+    await _tokenStorage.clearToken();
+    await _signOutGoogle();
+    _sessionController.reset();
+    _clearUserDataCache();
+    state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   Future<void> login({required String email, required String password}) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    await _prepareForNewAuthentication();
+    state = const AuthState(
+      status: AuthStatus.unauthenticated,
+      isLoading: true,
+    );
     try {
       final response = await _authApi.login(
         LoginRequest(email: email, password: password),
@@ -143,7 +140,11 @@ class AuthNotifier extends Notifier<AuthState> {
     required String email,
     required String password,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    await _prepareForNewAuthentication();
+    state = const AuthState(
+      status: AuthStatus.unauthenticated,
+      isLoading: true,
+    );
     try {
       final response = await _authApi.register(
         RegisterRequest(
@@ -164,7 +165,11 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> googleLogin() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    await _prepareForNewAuthentication();
+    state = const AuthState(
+      status: AuthStatus.unauthenticated,
+      isLoading: true,
+    );
 
     final effectiveClientId = _googleWebClientId.isNotEmpty
         ? _googleWebClientId
@@ -191,6 +196,11 @@ class AuthNotifier extends Notifier<AuthState> {
             ? effectiveServerClientId
             : null,
       );
+      try {
+        await googleSignIn.disconnect();
+      } on Exception {
+        await googleSignIn.signOut();
+      }
       final account = await googleSignIn.signIn();
       if (account == null) {
         state = state.copyWith(isLoading: false, clearError: true);
@@ -220,6 +230,12 @@ class AuthNotifier extends Notifier<AuthState> {
         isLoading: false,
         errorMessage: error.message,
       );
+    } on PlatformException catch (error) {
+      state = AuthState(
+        status: AuthStatus.unauthenticated,
+        isLoading: false,
+        errorMessage: _googleSignInErrorMessage(error),
+      );
     } on Exception catch (error) {
       state = AuthState(
         status: AuthStatus.unauthenticated,
@@ -247,7 +263,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> logout() async {
     await _tokenStorage.clearToken();
+    await _signOutGoogle();
     _sessionController.reset();
+    _clearUserDataCache();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
@@ -271,6 +289,7 @@ class AuthNotifier extends Notifier<AuthState> {
     final token = response.accessToken.trim();
     if (token.isEmpty) {
       await _tokenStorage.clearToken();
+      _clearUserDataCache();
       state = AuthState(
         status: AuthStatus.unauthenticated,
         isLoading: false,
@@ -279,9 +298,53 @@ class AuthNotifier extends Notifier<AuthState> {
       return;
     }
 
+    _clearUserDataCache();
     await _tokenStorage.saveToken(token);
     await _languageNotifier.setLanguage(response.user.preferredLanguage);
     _sessionController.reset();
     state = AuthState(status: AuthStatus.authenticated, user: response.user);
+  }
+
+  Future<void> _prepareForNewAuthentication() async {
+    await _tokenStorage.clearToken();
+    _sessionController.reset();
+    _clearUserDataCache();
+  }
+
+  String _googleSignInErrorMessage(PlatformException error) {
+    final details = '${error.code} ${error.message ?? ''} ${error.details ?? ''}';
+    final isDeveloperError =
+        error.code == 'sign_in_failed' && details.contains('ApiException: 10');
+
+    if (isDeveloperError) {
+      return _strings.isRu
+          ? 'Google вход не настроен. Проверьте package name и SHA-1 в Google Cloud.'
+          : 'Google менен кируу жондолгон эмес. Google Cloud ичинен package name жана SHA-1 текшериңиз.';
+    }
+
+    return _strings.isRu
+        ? 'Не удалось войти через Google. Попробуйте еще раз.'
+        : 'Google менен кируу ишке ашкан жок. Кайра аракет кылыңыз.';
+  }
+
+  Future<void> _signOutGoogle() async {
+    final googleSignIn = GoogleSignIn();
+    try {
+      await googleSignIn.disconnect();
+    } on Exception {
+      // Google may throw when there is no connected account.
+    }
+    try {
+      await googleSignIn.signOut();
+    } on Exception {
+      // The account is already signed out.
+    }
+  }
+
+  void _clearUserDataCache() {
+    ref.invalidate(profileUserProvider);
+    ref.invalidate(recordsProvider);
+    ref.invalidate(categoriesProvider);
+    ref.read(testProvider.notifier).clear();
   }
 }

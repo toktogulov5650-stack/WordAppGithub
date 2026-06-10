@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/language/app_strings.dart';
 import '../../../core/language/language_provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/responsive.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/empty_view.dart';
 import '../../../core/widgets/error_view.dart';
@@ -41,7 +42,20 @@ class UnknownWordsScreen extends ConsumerWidget {
             }
 
             return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+              padding: EdgeInsets.fromLTRB(
+                Responsive.horizontalPadding(
+                  context,
+                  compact: 18,
+                  regular: 20,
+                ),
+                10,
+                Responsive.horizontalPadding(
+                  context,
+                  compact: 18,
+                  regular: 20,
+                ),
+                28,
+              ),
               itemBuilder: (context, index) {
                 final word = words[index];
                 return AppCard(
@@ -51,8 +65,8 @@ class UnknownWordsScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       Container(
-                        width: 54,
-                        height: 54,
+                        width: Responsive.value(context, 54, maxScale: 1),
+                        height: Responsive.value(context, 54, maxScale: 1),
                         decoration: BoxDecoration(
                           color: AppColors.verySoftGreen,
                           borderRadius: BorderRadius.circular(19),
@@ -70,6 +84,8 @@ class UnknownWordsScreen extends ConsumerWidget {
                           children: [
                             Text(
                               word.englishWord,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 5),

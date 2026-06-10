@@ -66,7 +66,8 @@ class AuthApi {
         data: {'languageCode': languageCode},
       );
       final data = response.data;
-      if (data is Map<String, dynamic> && data['user'] is Map<String, dynamic>) {
+      if (data is Map<String, dynamic> &&
+          data['user'] is Map<String, dynamic>) {
         return UserModel.fromJson(data['user'] as Map<String, dynamic>);
       }
       if (data is Map<String, dynamic>) {

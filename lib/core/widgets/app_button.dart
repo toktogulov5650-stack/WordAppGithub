@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
 
 enum AppButtonVariant { primary, secondary, success, danger, warning }
 
@@ -31,13 +32,19 @@ class AppButton extends StatelessWidget {
     final style = _styleForVariant(variant);
     final isDisabled = onPressed == null && !isLoading;
     final borderRadius = BorderRadius.circular(18);
+    final effectiveHeight = Responsive.value(
+      context,
+      height,
+      minScale: 0.94,
+      maxScale: 1,
+    );
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 180),
       opacity: isDisabled ? 0.55 : 1,
       child: Container(
         width: fullWidth ? double.infinity : null,
-        height: height,
+        height: effectiveHeight,
         decoration: BoxDecoration(
           color: style.backgroundColor,
           borderRadius: borderRadius,
@@ -86,7 +93,7 @@ class AppButton extends StatelessWidget {
                               style: Theme.of(context).textTheme.labelLarge
                                   ?.copyWith(
                                     color: style.foregroundColor,
-                                    fontSize: 15,
+                                    fontSize: Responsive.font(context, 15),
                                   ),
                             ),
                           ),

@@ -80,12 +80,14 @@ class SubmitAnswerResponse {
     required this.isCorrect,
     required this.correctAnswerCount,
     required this.isFinished,
+    this.correctAnswer,
     this.currentQuestion,
   });
 
   final bool isCorrect;
   final int correctAnswerCount;
   final bool isFinished;
+  final String? correctAnswer;
   final TestQuestionModel? currentQuestion;
 
   factory SubmitAnswerResponse.fromJson(Map<String, dynamic> json) {
@@ -93,12 +95,74 @@ class SubmitAnswerResponse {
       isCorrect: json['isCorrect'] as bool? ?? false,
       correctAnswerCount: (json['correctAnswerCount'] as num?)?.toInt() ?? 0,
       isFinished: json['isFinished'] as bool? ?? false,
+      correctAnswer: _readCorrectAnswer(json),
       currentQuestion: json['currentQuestion'] is Map<String, dynamic>
           ? TestQuestionModel.fromJson(
               json['currentQuestion'] as Map<String, dynamic>,
             )
           : null,
     );
+  }
+
+  static String? _readCorrectAnswer(Map<String, dynamic> json) {
+    for (final key in const [
+      'correctAnswer',
+      'correct_answer',
+      'correctAnswerText',
+      'correctTranslation',
+      'correct_translation',
+      'rightAnswer',
+      'right_answer',
+      'correctOption',
+      'correct_option',
+      'correctTranslations',
+      'correct_translations',
+      'answer',
+      'translation',
+    ]) {
+      final value = _stringFromValue(json[key]);
+      if (value != null && value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return null;
+  }
+
+  static String? _stringFromValue(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is String) {
+      final text = value.trim();
+      return text.isEmpty ? null : text;
+    }
+    if (value is Iterable) {
+      final text = value
+          .map(_stringFromValue)
+          .whereType<String>()
+          .where((item) => item.isNotEmpty)
+          .join(', ');
+      return text.isEmpty ? null : text;
+    }
+    if (value is Map<String, dynamic>) {
+      for (final key in const [
+        'translation',
+        'text',
+        'answer',
+        'value',
+        'name',
+        'primaryTranslation',
+      ]) {
+        final text = _stringFromValue(value[key]);
+        if (text != null && text.isNotEmpty) {
+          return text;
+        }
+      }
+    }
+
+    final text = value.toString().trim();
+    return text.isEmpty ? null : text;
   }
 }
 

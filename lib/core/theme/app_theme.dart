@@ -55,65 +55,81 @@ class AppColors {
 }
 
 class AppTheme {
+  static const fontFamily = 'Manrope';
+
   static ThemeData get lightTheme {
     const textTheme = TextTheme(
       displaySmall: TextStyle(
-        fontSize: 36,
-        height: 1.08,
+        fontSize: 34,
+        height: 1.1,
         fontWeight: FontWeight.w800,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
-        letterSpacing: -1,
+        letterSpacing: 0,
       ),
       headlineMedium: TextStyle(
-        fontSize: 29,
-        height: 1.08,
+        fontSize: 28,
+        height: 1.12,
         fontWeight: FontWeight.w800,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
-        letterSpacing: -0.6,
+        letterSpacing: 0,
       ),
       titleLarge: TextStyle(
-        fontSize: 22,
-        height: 1.16,
+        fontSize: 21,
+        height: 1.2,
         fontWeight: FontWeight.w700,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
-        letterSpacing: -0.25,
+        letterSpacing: 0,
       ),
       titleMedium: TextStyle(
         fontSize: 17,
-        height: 1.3,
+        height: 1.28,
         fontWeight: FontWeight.w600,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
+        letterSpacing: 0,
       ),
       bodyLarge: TextStyle(
         fontSize: 16,
-        height: 1.45,
-        fontWeight: FontWeight.w500,
+        height: 1.48,
+        fontWeight: FontWeight.w400,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
+        letterSpacing: 0,
       ),
       bodyMedium: TextStyle(
         fontSize: 15,
-        height: 1.45,
-        fontWeight: FontWeight.w500,
+        height: 1.46,
+        fontWeight: FontWeight.w400,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
+        letterSpacing: 0,
       ),
       bodySmall: TextStyle(
         fontSize: 13,
-        height: 1.35,
-        fontWeight: FontWeight.w500,
+        height: 1.4,
+        fontWeight: FontWeight.w400,
+        fontFamily: fontFamily,
         color: AppColors.textMuted,
+        letterSpacing: 0,
       ),
       labelLarge: TextStyle(
         fontSize: 15,
-        height: 1.2,
+        height: 1.24,
         fontWeight: FontWeight.w600,
+        fontFamily: fontFamily,
         color: AppColors.textDark,
+        letterSpacing: 0,
       ),
       labelMedium: TextStyle(
         fontSize: 12,
-        height: 1.2,
-        fontWeight: FontWeight.w700,
+        height: 1.24,
+        fontWeight: FontWeight.w600,
+        fontFamily: fontFamily,
         color: AppColors.textMuted,
-        letterSpacing: 0.15,
+        letterSpacing: 0,
       ),
     );
 
@@ -130,6 +146,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
       canvasColor: AppColors.background,
@@ -152,9 +169,10 @@ class AppTheme {
         titleTextStyle: TextStyle(
           fontSize: 20,
           height: 1.2,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
+          fontFamily: fontFamily,
           color: AppColors.textDark,
-          letterSpacing: -0.25,
+          letterSpacing: 0,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -162,7 +180,9 @@ class AppTheme {
         contentTextStyle: const TextStyle(
           color: Colors.white,
           fontSize: 14,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
+          fontFamily: fontFamily,
+          letterSpacing: 0,
         ),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -186,16 +206,23 @@ class AppTheme {
           final isSelected = states.contains(WidgetState.selected);
           return TextStyle(
             fontSize: 11,
-            height: 1.15,
-            fontWeight: FontWeight.w700,
+            height: 1.18,
+            fontWeight: FontWeight.w600,
+            fontFamily: fontFamily,
             color: isSelected ? AppColors.textDark : AppColors.textTertiary,
+            letterSpacing: 0,
           );
         }),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.textDark,
-          textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontFamily: fontFamily,
+            fontSize: 15,
+            letterSpacing: 0,
+          ),
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
@@ -211,18 +238,24 @@ class AppTheme {
         ),
         labelStyle: const TextStyle(
           color: AppColors.textMuted,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
+          fontFamily: fontFamily,
+          letterSpacing: 0,
         ),
         hintStyle: const TextStyle(
           color: AppColors.textTertiary,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w400,
+          fontFamily: fontFamily,
+          letterSpacing: 0,
         ),
         prefixIconColor: AppColors.textTertiary,
         suffixIconColor: AppColors.textTertiary,
         errorStyle: const TextStyle(
           color: AppColors.error,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
+          fontFamily: fontFamily,
+          letterSpacing: 0,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
